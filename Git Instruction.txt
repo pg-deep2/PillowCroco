@@ -1,0 +1,9 @@
+git clone https://github.com/shiningjean1276/PrographyDeep2.git
+
+수정한 뒤에 
+git add 변경한것
+git commit -m "코멘트"
+git push
+
+디렉토리 삭제
+git rm -r --cached 
