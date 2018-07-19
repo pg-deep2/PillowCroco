@@ -1,0 +1,125 @@
+import torch.nn as nn
+import numpy as np
+import torch
+from dataloader import get_loader
+
+
+class C3D(nn.Module):
+    """
+    The C3D network as described in [1].
+    """
+
+    def __init__(self):
+        super(C3D, self).__init__()
+
+        self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.pool1 = nn.MaxPool3d(kernel_size=(1, 2, 2), stride=(1, 2, 2))
+
+        self.conv2 = nn.Conv3d(64, 128, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.pool2 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2))
+
+        self.conv3a = nn.Conv3d(128, 256, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.conv3b = nn.Conv3d(256, 256, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.pool3 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2))
+
+        self.conv4a = nn.Conv3d(256, 512, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.conv4b = nn.Conv3d(512, 512, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.pool4 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2))
+
+        self.conv5a = nn.Conv3d(512, 512, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.conv5b = nn.Conv3d(512, 512, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.pool5 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2), padding=(0, 1, 1))
+
+        self.fc6 = nn.Linear(8192, 4096)
+        self.fc7 = nn.Linear(4096, 4096)
+        self.fc8 = nn.Linear(4096, 487)
+
+        self.dropout = nn.Dropout(p=0.5)
+
+        self.relu = nn.ReLU()
+        self.softmax = nn.Softmax()
+
+
+class GRU(nn.Module):
+    def __init__(self, c3d):
+        super(GRU, self).__init__()
+
+        self.c3d = c3d
+
+        # 2048 -> output size[1] of resnet
+        self.gru_encoder = nn.GRUCell(243, 20)
+        self.relu = nn.ReLU()
+        self.decoder = nn.Sequential(nn.Linear(20, 243),
+                                     nn.ReLU())
+        self.temporal_pool = nn.MaxPool1d(4, 4, 0)
+
+        self.mseLoss = nn.MSELoss()
+
+    def forward(self, input):
+        start = 0
+        end = 48
+
+        loss_list = []
+
+        e_t = torch.FloatTensor(128, 20).normal_().cuda()
+
+        step = 0
+        while end < input.shape[2]:
+            x1 = input[:, :, start:end, :, :]
+
+            # x.shape: 1, 3, 48, h, w
+            h1 = self.c3d(x1)
+            # h.shape: 1, 512, 3, 9, 9
+            h1 = h1.squeeze()
+            # flatten h. for insert data to GRU
+            h1 = h1.view(1, 512, -1).permute(0, 2, 1)
+            # h.shape : 1, 243, 512
+
+            h1 = self.temporal_pool(h1).permute(0, 2, 1).squeeze()
+            # h1.shape : 128, 243
+
+            e_t = (self.gru_encoder(h1.cuda(), e_t))
+            # print("et",e_t.shape)
+            # e_t.shape: 128,20
+            feature_out = self.decoder(e_t)
+            # print("f",feature_out.shape)
+            # f.shape: 128, 243
+
+            loss = self.mseLoss(feature_out, h1)
+            loss_list.append(loss.data)
+            start += 6
+            end += 6
+            step += 1
+
+        total_loss = sum(loss_list) / step / 2
+
+        inputback = input.cpu()
+        inputback = torch.from_numpy(np.flip(inputback.numpy(), 1).copy())
+        inputback = inputback.cuda()
+
+        # backward
+        start = 0
+        end = 48
+        step = 0
+        while end < inputback.shape[2]:
+            x2 = inputback[:, :, start:end, :, :]
+
+            h2 = self.c3d(x2)
+            h2 = h2.squeeze()
+            h2 = h2.view(1, 512, -1).permute(0, 2, 1)
+            # h.shape : 1, 243, 512
+
+            h2 = self.temporal_pool(h2).permute(0, 2, 1).squeeze()
+
+            # same process
+            e_t = (self.gru_encoder(h2.cuda(), e_t))
+            feature_out = self.decoder(e_t)
+            loss = self.mseLoss(feature_out, h2)
+            loss_list.append(loss.data)
+            start += 6
+            end += 6
+            step += 1
+
+        total_loss += sum(loss_list) / step / 2
+
+        return total_loss
