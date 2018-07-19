@@ -1,8 +1,12 @@
 import torch.nn as nn
 import numpy as np
 import torch
-from dataloader import get_loader
+import visdom
+import time
 
+def denorm(x):
+    out = (x + 1) / 2
+    return out.clamp(0, 1)
 
 class C3D(nn.Module):
     """
@@ -63,6 +67,11 @@ class GRU(nn.Module):
 
         e_t = torch.FloatTensor(128, 20).normal_().cuda()
 
+        viz = visdom.Visdom()
+        for f in range(0, input.shape[2]):
+            viz.image(denorm(input.squeeze().permute(1, 0, 2, 3))[f, :, :, :], win="gt video", opts={'title': 'GT'})
+            time.sleep(0.01)
+
         step = 0
         while end < input.shape[2]:
             x1 = input[:, :, start:end, :, :]
@@ -94,10 +103,16 @@ class GRU(nn.Module):
         total_loss = sum(loss_list) / step / 2
 
         inputback = input.cpu()
-        inputback = torch.from_numpy(np.flip(inputback.numpy(), 1).copy())
+        inputback = torch.from_numpy(np.flip(inputback.numpy(), 2).copy())
         inputback = inputback.cuda()
 
+        viz = visdom.Visdom()
+        for f in range(0, input.shape[2]):
+            viz.image(denorm(inputback.squeeze().permute(1, 0, 2, 3))[f, :, :, :], win="gt video", opts={'title': 'GT'})
+            time.sleep(0.01)
+
         # backward
+        loss_list = []
         start = 0
         end = 48
         step = 0

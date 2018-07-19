@@ -3,6 +3,7 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 import torch.optim as optim
+import vis_tool
 
 from model.C3D import C3D, GRU
 
@@ -24,6 +25,7 @@ class Trainer(object):
         self.use_cuda = config.cuda
         self.outf = config.outf
         self.build_model()
+        self.vis = vis_tool.Visualizer()
 
     def load_model(self):
         self.p3d.load_state_dict(torch.load(self.config.pretrained_path))
@@ -83,16 +85,9 @@ class Trainer(object):
                 print('[%d/%d][%d/%d] - time: %.2f, h_loss: %.3f'
                       % (epoch + 1, self.n_epochs, step + 1, len(self.h_loader), step_end_time - start_time, h_loss))
 
-                if step % self.log_interval == 0:
-                    # for step, t in enumerate(self.test_loader):
-                    #     t_video = t[0]
-                    #     t_label = t[1]
-                    #
-                    #
-                    pass
+                self.vis.plot('LOSS', (h_loss.data).cpu().numpy())
+
 
             if epoch % self.checkpoint_step == 0:
-                """
-                torch.save(GRU.state_dict(), 'params.ckpt')
-                GRU.load_state_dict(self, torch.load('params.ckpt'))
-                """
+                torch.save(self.gru.state_dict(), 'chkpoint' + str(epoch+1) + '.pth')
+                print("checkpoint saved")

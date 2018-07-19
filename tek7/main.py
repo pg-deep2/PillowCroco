@@ -42,3 +42,12 @@ def main(config):
 if __name__ == "__main__":
     config = get_config()
     main(config)
+
+
+"""
+[1/10][1/30] - time: 29.02, h_loss: 6418545.000
+[1/10][2/30] - time: 46.79, h_loss: 6370203.000
+[1/10][3/30] - time: 64.69, h_loss: 7697052.500
+[1/10][4/30] - time: 77.65, h_loss: 10917174.000
+-.-?
+"""
