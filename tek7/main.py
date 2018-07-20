@@ -30,11 +30,10 @@ def main(config):
 
     dataroot = config.dataroot
     h_datapath = os.path.join(dataroot,"HV")
-    r_datapath = os.path.join(dataroot,"RV")
     t_datapath = os.path.join(dataroot,'testRV')
 
     # dataroot, cache, image_size, n_channels, image_batch, video_batch, video_length):
-    h_loader, r_loader, test_loader = get_loader(h_datapath, r_datapath, t_datapath, 1)
+    h_loader, test_loader = get_loader(h_datapath, t_datapath, 1)
 
     trainer = Trainer(config, h_loader)
     trainer.train()

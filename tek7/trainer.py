@@ -4,6 +4,7 @@ from torch import nn
 from torch.autograd import Variable
 import torch.optim as optim
 import vis_tool
+from config import get_config
 
 from model.C3D import C3D, GRU
 
@@ -58,6 +59,7 @@ class Trainer(object):
 
     def train(self):
         # create optimizers
+        cfig = get_config()
         opt_model = optim.Adam(filter(lambda p: p.requires_grad, self.gru.parameters()),
                                lr=self.lr, betas=(self.beta1, self.beta2),
                                weight_decay=self.weight_decay)
@@ -85,7 +87,9 @@ class Trainer(object):
                 print('[%d/%d][%d/%d] - time: %.2f, h_loss: %.3f'
                       % (epoch + 1, self.n_epochs, step + 1, len(self.h_loader), step_end_time - start_time, h_loss))
 
-                self.vis.plot('LOSS', (h_loss.data).cpu().numpy())
+                self.vis.plot('LOSS with lr:%.4f, b1:%.1f, b2:%.3f, wd:%.5f'
+                              %(cfig.lr, cfig.beta1, cfig.beta2, cfig.weight_decay),
+                              (h_loss.data).cpu().numpy())
 
 
             if epoch % self.checkpoint_step == 0:
