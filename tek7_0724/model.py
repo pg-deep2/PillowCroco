@@ -40,7 +40,7 @@ class GRU(nn.Module):
     def forward(self, input):
         # input.shape = 1 x f x 3 x 240 x 400
         self.input = input
-        #print(input.shape)
+        # print(input.shape)
 
         """
         inputback = input.cpu()
@@ -60,34 +60,35 @@ class GRU(nn.Module):
         end = 12
         while end < input.shape[1]:
             x = input[0, start:end, :, :, :]
-            #print(x.shape)
+            # print(x.shape)
             x = x.squeeze()
 
             h = self.c2d(x)
-            #print(h.shape)
+            # print(h.shape)
             h = h.squeeze()
             h = h.view(-1, 12, 512)
-            #print("h", h.shape)
+            # print("h", h.shape)
             # h.shape: 48 2048 2 2
 
             h, _ = self.gru(h)
             # h = self.fc(h)
-            #print("h", h.shape, h)
+            # print("h", h.shape, h)
             h = self.sig(h)
             h = h.squeeze()
-            #print("h", h.shape, h)
+            # print("h", h.shape, h)
 
             # h.shape : 1
 
             # ??? 어캐해야하징~~
             f_score_list[start:end] += h.data
-            f_score_list[6:start + 6] /= 2
             # print(f_score_list)
 
             start += 6
             end += 6
             step += 1
-        f_score_list = f_score_list[:end]
+
+        f_score_list[6:start] /= 2
+        f_score_list = f_score_list[:end - 6]
         return torch.from_numpy(f_score_list).cuda()
 
 
