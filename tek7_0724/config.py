@@ -2,14 +2,14 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--dataroot', default='/home/ubuntu/PillowCroco/PROGRAPHY DATA_ver2', help='path to dataset')
+parser.add_argument('--dataroot', default='/home/ubuntu/PillowCroco/PROGRAPHY DATA_ver3', help='path to dataset')
 
 parser.add_argument('--n_epochs', type=int, default=100, help='number of epochs')
 parser.add_argument('--n_steps', type=int, help='steps per epochs')
 parser.add_argument('--log_interval', type=int, default=100, help='save valid gif and image')
 parser.add_argument('--checkpoint_step', type=int, default=2, help='save checkpoint')
 
-parser.add_argument('--lr', type=float, default=0.01, help='learning rate, default=0.001')
+parser.add_argument('--lr', type=float, default=0.015, help='learning rate, default=0.001')
 
 parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam. default=0.9')
 parser.add_argument('--beta2', type=float, default=0.999, help='beta2 for adam. default=0.999')

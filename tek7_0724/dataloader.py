@@ -80,24 +80,26 @@ class RawVideoDataset(torch.utils.data.Dataset):
             else:
                 break
         cap.release()
+        # input size 조절 필요 x
+        # total_frames = f
+        # # choose length of raw video [6,10]
+        # if total_frames >= 12 * 10:
+        #     frame_len = random.randint(6, 10) * 12
+        #
+        # # if video is shorter than 120 frames, [6, secs]
+        # elif total_frames >= 12 * 6:
+        #     frame_len = random.randint(6, total_frames // 12) * 12
+        #
+        # else:
+        #     raise IndexError('Video is shorter than 6 seconds!')
+        #
+        # # start frame: [0, (total frame - frame len))
+        # random_start = random.randint(0, total_frames - frame_len)
 
-        total_frames = f
-        # choose length of raw video [6,10]
-        if total_frames >= 12 * 10:
-            frame_len = random.randint(6, 10) * 12
-
-        # if video is shorter than 120 frames, [6, secs]
-        elif total_frames >= 12 * 6:
-            frame_len = random.randint(6, total_frames // 12) * 12
-
-        else:
-            raise IndexError('Video is shorter than 6 seconds!')
-
-        # start frame: [0, (total frame - frame len))
-        random_start = random.randint(0, total_frames - frame_len)
         out = np.concatenate(frames)
         out = out.reshape(-1, 3, 240, 400)
-        out = out[random_start: random_start + frame_len, :, :, :]
+
+        # out = out[random_start: random_start + frame_len, :, :, :]
 
         return self.transforms(out), label
 

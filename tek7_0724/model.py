@@ -24,17 +24,18 @@ class GRU(nn.Module):
                                  nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2), padding=(1, 1)),  # 512 3 3
                                  nn.LeakyReLU(0.2),
 
-                                 nn.Conv2d(512, 512, kernel_size=(2, 2), stride=(1, 1)),  # 512 2 2
+                                 nn.Conv2d(512, 1024, kernel_size=(2, 2), stride=(1, 1)),  # 512 2 2
                                  nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),  # 512 1 1
                                  nn.LeakyReLU(0.2)
                                  )
 
-        self.gru = nn.GRU(512, 1)
-        self.fc = nn.Sequential(nn.Linear(12 * 75, 600),
-                                nn.Linear(600, 100),
-                                nn.Linear(100, 10),
-                                nn.Linear(10, 1)
-                                )
+        self.gru = nn.GRU(1024, 1)
+
+        # self.fc = nn.Sequential(nn.Linear(24 * 75, 600),
+        #                         nn.Linear(600, 100),
+        #                         nn.Linear(100, 10),
+        #                         nn.Linear(10, 1)
+        #                         )
         self.sig = nn.Sigmoid()
 
     def forward(self, input):
@@ -57,7 +58,7 @@ class GRU(nn.Module):
 
         step = 0
         start = 0
-        end = 12
+        end = 24
         while end < input.shape[1]:
             x = input[0, start:end, :, :, :]
             # print(x.shape)
@@ -66,7 +67,7 @@ class GRU(nn.Module):
             h = self.c2d(x)
             # print(h.shape)
             h = h.squeeze()
-            h = h.view(-1, 12, 512)
+            h = h.view(-1, 24, 1024)
             # print("h", h.shape)
             # h.shape: 48 2048 2 2
 
@@ -87,16 +88,21 @@ class GRU(nn.Module):
             end += 6
             step += 1
 
-        f_score_list[6:start] /= 2
+        f_score_list[6:12] /= 2
+        f_score_list[12:18] /= 3
+        f_score_list[18:start] /= 4
+        f_score_list[start:start+6] /= 3
+        f_score_list[start+12:start+18] /= 2
+
         f_score_list = f_score_list[:end - 6]
         return torch.from_numpy(f_score_list).cuda()
 
 
 if __name__ == "__main__":
     gru = GRU().cuda()
-    h_l, r_l, t_l = get_loader('/home/ubuntu/PillowCroco/PROGRAPHY DATA_ver2/HV',
-                               '/home/ubuntu/PillowCroco/PROGRAPHY DATA_ver2/RV',
-                               '/home/ubuntu/PillowCroco/PROGRAPHY DATA_ver2/testRV', 1)
+    h_l, r_l, t_l = get_loader('/home/ubuntu/PillowCroco/PROGRAPHY DATA_ver3/HV',
+                               '/home/ubuntu/PillowCroco/PROGRAPHY DATA_ver3/RV',
+                               '/home/ubuntu/PillowCroco/PROGRAPHY DATA_ver3/testRV', 1)
 
     for idx, video in enumerate(h_l):
         # print(video)
